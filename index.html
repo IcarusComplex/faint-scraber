@@ -1,0 +1,73 @@
+<html lang="en">
+<head>
+    <title>Faint Armory</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.20/css/dataTables.semanticui.min.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.20/js/dataTables.semanticui.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.4.2/handlebars.js"></script>
+
+    <script>
+        $( document ).ready(function() {
+            $.when(
+                $.get("2019-09-25T173000000Z.jsonl"),
+                $.get("2019-09-30T173000000Z.jsonl"),
+                $.get("2019-10-02T173000000Z.jsonl"),
+                $.get("2019-10-09T173000000Z.jsonl"),
+                $.get("2019-10-16T173000000Z.jsonl"),
+            ).done(function() {
+                const rows = [];
+                for (const data of arguments) {
+                    for (const line of data[0].split("\n")) {
+                        if (line !== "") {
+                            const parsed = JSON.parse(line);
+                            const items = parsed.items;
+                            for (const item of items) {
+                                item.charName = parsed.charName;
+                                rows.push(item);
+                            }
+                        }
+                    }
+                }
+
+                const template = $('#datatable-template').html();
+                const templateScript = Handlebars.compile(template);
+                const html = templateScript({rows});
+                $(document.body).append(html);
+                $('#itemRowsTable').DataTable({
+                    "pageLength": 50
+                })
+            });
+        });
+
+    </script>
+
+    <script id="datatable-template" type="text/x-handlebars-template">
+        <div id="table-container" class="ui" style="padding-left: 1em; padding-right: 1em;">
+        <table id="itemRowsTable" class="ui celled table" style="width:100%;">
+            <thead>
+            <tr>
+                <th>CharName</th>
+                <th>ItemName</th>
+            </tr>
+            </thead>
+            <tbody>
+            {{#each rows}}
+            <tr>
+                <td>{{this.charName}}</td>
+                <td>{{this.name}}</td>
+            </tr>
+            {{/each}}
+            </tbody>
+        </table>
+        </div>
+    </script>
+</head>
+<body>
+
+</body>
+</html>

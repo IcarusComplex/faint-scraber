@@ -1,0 +1,21 @@
+{
+  "name": "projectmj-scraber",
+  "version": "1.0.0",
+  "description": "Scraber for project mj",
+  "main": "index.js",
+  "author": "Mads Jon Nielsen <madsjon@gmail.com>",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "scraber": "node scraber.js"
+  },
+  "dependencies": {
+    "@types/puppeteer": "^1.20.2",
+    "await-sleep": "0.0.1",
+    "fs-extra": "^8.1.0",
+    "puppeteer": "^1.20.0"
+  },
+  "devDependencies": {
+    "nodemon": "^1.19.1"
+  }
+}
