@@ -12,7 +12,20 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.4.2/handlebars.js"></script>
 
     <script>
+        function daysAgo(firstDate) {
+            const oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
+            const secondDate = new Date();
+            return Math.round(Math.abs((firstDate - secondDate) / oneDay)) + " days ago";
+        }
+
         $( document ).ready(function() {
+            var files = [
+                "2019-09-25T173000000Z.jsonl",
+                "2019-09-30T173000000Z.jsonl",
+                "2019-10-02T173000000Z.jsonl",
+                "2019-10-09T173000000Z.jsonl",
+                "2019-10-16T173000000Z.jsonl"
+            ];
             $.when(
                 $.get("2019-09-25T173000000Z.jsonl"),
                 $.get("2019-09-30T173000000Z.jsonl"),
@@ -20,15 +33,19 @@
                 $.get("2019-10-09T173000000Z.jsonl"),
                 $.get("2019-10-16T173000000Z.jsonl"),
             ).done(function() {
-                const rows = [];
+                const map = new Map();
                 for (const data of arguments) {
+                    const filePath = files.shift();
+                    const { groups: { dateStr } } =/(?<dateStr>.*?)T/.exec(filePath);
                     for (const line of data[0].split("\n")) {
                         if (line !== "") {
                             const parsed = JSON.parse(line);
                             const items = parsed.items;
                             for (const item of items) {
-                                item.charName = parsed.charName;
-                                rows.push(item);
+                                const id = parsed.charName + '_' + item.name;
+                                map.set(id, map.has(id) ? map.get(id) : {firstSeen: new Date(dateStr).getTime(), firstSeenAgo: daysAgo(new Date(dateStr)), itemName: item.name, charName: parsed.charName});
+                                map.get(id).lastSeen = new Date(dateStr).getTime();
+                                map.get(id).lastSeenAgo = daysAgo(new Date(dateStr));
                             }
                         }
                     }
@@ -36,9 +53,10 @@
 
                 const template = $('#datatable-template').html();
                 const templateScript = Handlebars.compile(template);
-                const html = templateScript({rows});
+                const html = templateScript({rows: map.values()});
                 $(document.body).append(html);
                 $('#itemRowsTable').DataTable({
+                    "orderMulti": true,
                     "pageLength": 50
                 })
             });
@@ -53,13 +71,17 @@
             <tr>
                 <th>CharName</th>
                 <th>ItemName</th>
+                <th>First</th>
+                <th>Last</th>
             </tr>
             </thead>
             <tbody>
             {{#each rows}}
             <tr>
                 <td>{{this.charName}}</td>
-                <td>{{this.name}}</td>
+                <td>{{this.itemName}}</td>
+                <td data-order="{{this.firstSeen}}">{{this.firstSeenAgo}}</td>
+                <td data-order="{{this.lastSeen}}">{{this.lastSeenAgo}}</td>
             </tr>
             {{/each}}
             </tbody>
