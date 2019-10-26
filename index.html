@@ -3,19 +3,43 @@
     <title>Faint Armory</title>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.20/css/dataTables.semanticui.min.css">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-    <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.10.20/js/dataTables.semanticui.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.4.2/handlebars.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.1.0/papaparse.min.js"></script>
+
+    <style>
+        .uncommon {
+            color: #26c426;
+            font-weight: bold;
+        }
+        .rare {
+            color: #2d2de1;
+            font-weight: bold;
+        }
+        .epic {
+            color: #8c02cd;
+            font-weight: bold;
+        }
+        .legendary {
+            color: #f0940a;
+            font-weight: bold;
+        }
+
+        .truncate {
+            width: 250px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
 
     <script>
         function daysAgo(firstDate) {
             const oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
             const secondDate = new Date();
-            return Math.round(Math.abs((firstDate - secondDate) / oneDay)) + " days ago";
+            return Math.round(Math.abs((firstDate - secondDate) / oneDay)) + "d";
         }
 
         $( document ).ready(function() {
@@ -32,10 +56,15 @@
                 $.get("2019-10-02T173000000Z.jsonl"),
                 $.get("2019-10-09T173000000Z.jsonl"),
                 $.get("2019-10-16T173000000Z.jsonl"),
+
+                $.get("all_items.csv"),
             ).done(function() {
+                let raidItems = Papa.parse(arguments[arguments.length - 1][0], {header: true}).data;
+
                 const map = new Map();
-                for (const data of arguments) {
-                    const filePath = files.shift();
+                for (let fileIndex = 0; fileIndex < files.length; fileIndex++) {
+                    const filePath = files[fileIndex];
+                    const data = arguments[fileIndex];
                     const { groups: { dateStr } } =/(?<dateStr>.*?)T/.exec(filePath);
                     for (const line of data[0].split("\n")) {
                         if (line !== "") {
@@ -43,7 +72,23 @@
                             const items = parsed.items;
                             for (const item of items) {
                                 const id = parsed.charName + '_' + item.name;
-                                map.set(id, map.has(id) ? map.get(id) : {firstSeen: new Date(dateStr).getTime(), firstSeenAgo: daysAgo(new Date(dateStr)), itemName: item.name, charName: parsed.charName});
+
+                                if (!map.has(id)) {
+                                    const found = raidItems.find((ri) => ri.itemId === item.itemId);
+                                    const init = {
+                                        firstSeen: new Date(dateStr).getTime(),
+                                        firstSeenAgo: daysAgo(new Date(dateStr)),
+                                        itemName: item.name,
+                                        charName: parsed.charName,
+                                        location: found ? found.location : null,
+                                        icon: found ? found.icon : null,
+                                        rarity: found ? found.rarity : null,
+                                        slot: found ? found.slot : null,
+                                        type: found ? found.type : null,
+                                    };
+                                    map.set(id, init)
+                                }
+
                                 map.get(id).lastSeen = new Date(dateStr).getTime();
                                 map.get(id).lastSeenAgo = daysAgo(new Date(dateStr));
                             }
@@ -51,45 +96,68 @@
                     }
                 }
 
+                const list = Array.from(map.values());
+
+                const uniqueNames = list.map((e) => e.charName).filter(function (value, index, self) {
+                     return self.indexOf(value) === index;
+                 });
+                //const uniqueNames = ["Pjuske", "Knup", "Effia", "HQ", "Thriving", "Numx"];
+                const chars = [];
+                uniqueNames.forEach((name) => {
+                    const char = {
+                        name: name,
+                        raidItems: list.filter((f) => f.charName === name && ["MC", "ONY"].includes(f.location)).sort((a, b) => b.lastSeen - a.lastSeen),
+                    };
+                    if (char.raidItems.length > 0) {
+                        chars.push(char);
+                    }
+                });
+
                 const template = $('#datatable-template').html();
                 const templateScript = Handlebars.compile(template);
-                const html = templateScript({rows: map.values()});
-                $(document.body).append(html);
-                $('#itemRowsTable').DataTable({
-                    "orderMulti": true,
-                    "pageLength": 50
-                })
+                const html = templateScript({chars: chars});
+                $('#content').append(html);
             });
         });
 
     </script>
 
     <script id="datatable-template" type="text/x-handlebars-template">
-        <div id="table-container" class="ui" style="padding-left: 1em; padding-right: 1em;">
-        <table id="itemRowsTable" class="ui celled table" style="width:100%;">
-            <thead>
-            <tr>
-                <th>CharName</th>
-                <th>ItemName</th>
-                <th>First</th>
-                <th>Last</th>
-            </tr>
-            </thead>
-            <tbody>
-            {{#each rows}}
-            <tr>
-                <td>{{this.charName}}</td>
-                <td>{{this.itemName}}</td>
-                <td data-order="{{this.firstSeen}}">{{this.firstSeenAgo}}</td>
-                <td data-order="{{this.lastSeen}}">{{this.lastSeenAgo}}</td>
-            </tr>
-            {{/each}}
-            </tbody>
-        </table>
+        {{#each chars}}
+        <div class="ui compact">
+            <table class="ui table small compact">
+                <tbody>
+
+                <tr>
+                    <td style="text-align: center; font-weight: bold;" colspan="2">{{this.name}}</td>
+                </tr>
+                {{#each this.raidItems}}
+                <tr>
+                    <td class="{{this.rarity}}">{{this.itemName}}</td>
+                    <td style="font-size:0.7em;">{{this.lastSeenAgo}}</td>
+                </tr>
+                {{/each}}
+
+                </tbody>
+            </table>
         </div>
+        {{/each}}
     </script>
+
+    <style>
+        body {
+            margin: 1em;
+        }
+    </style>
 </head>
 <body>
 
+<div class="ui fluid input mini">
+    <input type="text" placeholder="Search...">
+</div>
+<div class="ui hidden divider"></div>
+<div id="content" class="ui grid">
+
+</div>
 </body>
 </html>
