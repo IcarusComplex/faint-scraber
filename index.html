@@ -45,7 +45,8 @@
         function inputChanged() {
             const val = $('#input').val();
             localStorage.setItem("inputValue", val);
-            renderTables()
+            clearTimeout(timeout);
+            timeout = setTimeout(() => renderTables(), 500);
         }
 
         function daysAgo(firstDate) {
@@ -188,7 +189,7 @@
 <body>
 
 <div class="ui fluid input mini">
-    <input id="input" onchange="inputChanged()" type="text" placeholder="Search...">
+    <input id="input" onkeyup="inputChanged()" onchange="inputChanged()" type="text" placeholder="Search...">
 </div>
 
 <div class="ui hidden divider"></div>
