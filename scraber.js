@@ -16,29 +16,38 @@ console.log(fileName);
     await page.goto(url, {waitUntil: 'load'});
 
     const sources = await page.evaluate(() => {
-        const sources = new Set();
+        const sources = new Map();
         const entries = document.getElementsByClassName("composition-entry");
         for (let i = 0, entry; entry = entries[i]; i++) {
             const reportLink = entry.childNodes[1].outerHTML;
-            const { groups: { source } } =/onclick.*?1,(?<source>.*?),0,0/.exec(reportLink);
-            sources.add(source);
+            const { groups: { sourceId } } =/onclick.*?1,(?<sourceId>.*?),0,0/.exec(reportLink);
+            const clazz = entry.childNodes[1].classList[0];
+            const charName = entry.childNodes[1].innerText;
+
+            sources.set(charName, {
+                sourceId: sourceId,
+                charName: charName,
+                clazz: clazz
+            });
         }
-        return Array.from(sources);
+        return Array.from(sources.values());
     });
     await browser.close();
 
     for (const source of sources) {
+        const sourceId = source.sourceId;
+        const clazz = source.clazz;
+        const charName = source.charName;
+
         const browser = await puppeteer.launch();
         const page = await browser.newPage();
-        const url = `https://classic.warcraftlogs.com/reports/${reportId}#boss=-2&difficulty=0&source=${source}&type=summary`;
+        const url = `https://classic.warcraftlogs.com/reports/${reportId}#boss=-2&difficulty=0&source=${sourceId}&type=summary`;
         await page.goto(url, {waitUntil: 'load'});
 
         await sleep(2000);
 
         try {
-            const char = await page.evaluate(() => {
-                const charName = document.getElementById("filter-source-text").childNodes[0].innerText;
-
+            const items = await page.evaluate(() => {
                 const items = [];
                 const table = document.getElementById("summary-gear-0");
                 const body = table.tBodies[0];
@@ -55,14 +64,19 @@ console.log(fileName);
                     const { groups: { itemId } } =/item=(?<itemId>.*)/.exec(wowheadLink);
                     items.push({itemId, name, rarity, slot, enchant, ilvl});
                 }
-                return {charName, items};
+                return items;
             });
 
-            if (char.items.length > 0) {
+            const char = {
+                charName: charName,
+                clazz: clazz,
+                items: items
+            };
+            if (items.length > 0) {
                 fs.appendFileSync(`${fileName}.jsonl`, JSON.stringify(char) + "\n");
-                console.log(`Wrote ${char.charName} ${source}`);
+                console.log(`Wrote ${charName} ${sourceId}`);
             } else {
-                console.log(`Dismissed ${source}`);
+                console.log(`Dismissed ${sourceId}`);
             }
 
         } catch (e) {
