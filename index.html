@@ -95,18 +95,16 @@
                             const items = parsed.items;
                             for (const item of items) {
                                 const id = parsed.charName + '_' + item.name;
+                                let enchant = enchantMap.find((e) => e.id === item.enchant);
+                                enchant = enchant ? enchant.name : item.enchant;
 
                                 if (!map.has(id)) {
                                     const found = raidItems.find((ri) => ri.itemId === item.itemId);
-                                    let enchant = enchantMap.find((e) => e.id === item.enchant);
-                                    enchant = enchant ? enchant.name : item.enchant;
-
                                     const init = {
                                         firstSeen: new Date(dateStr).getTime(),
                                         firstSeenAgo: daysAgo(new Date(dateStr)),
                                         itemName: item.name,
                                         charName: parsed.charName,
-                                        enchant: enchant,
                                         location: found ? found.location : null,
                                         icon: found ? found.icon : null,
                                         rarity: found ? found.rarity : null,
@@ -116,6 +114,7 @@
                                     map.set(id, init)
                                 }
 
+                                map.get(id).enchant = enchant;
                                 map.get(id).lastSeen = new Date(dateStr).getTime();
                                 map.get(id).lastSeenAgo = daysAgo(new Date(dateStr));
                             }
