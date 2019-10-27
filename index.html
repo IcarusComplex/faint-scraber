@@ -82,7 +82,6 @@
             promises.push($.get("enchant_id_to_name.csv"));
             promises.push($.get("all_items.csv"));
             $.when.apply($, promises).done(function() {
-                console.log(arguments);
                 let raidItems = Papa.parse(arguments[arguments.length - 1][0], {header: true}).data;
                 let enchantMap = Papa.parse(arguments[arguments.length - 2][0], {header: true}).data;
 
