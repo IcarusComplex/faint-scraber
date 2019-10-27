@@ -33,6 +33,10 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+
+        body {
+            padding: 1em;
+        }
     </style>
 
     <script>
@@ -41,8 +45,7 @@
         function inputChanged() {
             const val = $('#input').val();
             localStorage.setItem("inputValue", val);
-            clearTimeout(timeout);
-            timeout = setTimeout(() => renderTables(), 750);
+            renderTables()
         }
 
         function daysAgo(firstDate) {
@@ -181,17 +184,13 @@
         {{/each}}
     </script>
 
-    <style>
-        body {
-            margin: 1em;
-        }
-    </style>
 </head>
 <body>
 
 <div class="ui fluid input mini">
-    <input id="input" onkeyup="inputChanged()" onchange="inputChanged()" type="text" placeholder="Search...">
+    <input id="input" onchange="inputChanged()" type="text" placeholder="Search...">
 </div>
+
 <div class="ui hidden divider"></div>
 <div id="content" class="ui grid">
 
