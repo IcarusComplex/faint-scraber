@@ -8,6 +8,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.4.2/handlebars.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.1.0/papaparse.min.js"></script>
+    <script>var whTooltips = {colorLinks: true, iconizeLinks: true, renameLinks: true};</script>
+    <script src="https://wow.zamimg.com/widgets/power.js"></script>
 
     <style>
         .uncommon {
@@ -95,8 +97,9 @@
                             const items = parsed.items;
                             for (const item of items) {
                                 const id = parsed.charName + '_' + item.name;
-                                let enchant = enchantMap.find((e) => e.id === item.enchant);
-                                enchant = enchant ? enchant.name : item.enchant;
+                                const enchantId = item.enchant;
+                                let enchant = enchantMap.find((e) => e.id === enchantId);
+                                enchant = enchant ? enchant.name : enchantId;
 
                                 if (!map.has(id)) {
                                     const found = raidItems.find((ri) => ri.itemId === item.itemId);
@@ -104,6 +107,7 @@
                                         firstSeen: new Date(dateStr).getTime(),
                                         firstSeenAgo: daysAgo(new Date(dateStr)),
                                         itemName: item.name,
+                                        itemId: item.itemId,
                                         charName: parsed.charName,
                                         location: found ? found.location : null,
                                         icon: found ? found.icon : null,
@@ -114,6 +118,7 @@
                                     map.set(id, init)
                                 }
 
+                                map.get(id).enchantId = enchantId;
                                 map.get(id).enchant = enchant;
                                 map.get(id).lastSeen = new Date(dateStr).getTime();
                                 map.get(id).lastSeenAgo = daysAgo(new Date(dateStr));
@@ -191,8 +196,12 @@
                 </tr>
                 {{#each this.raidItems}}
                 <tr>
-                    <td class="{{this.rarity}} {{this.sizeByAgo}}">
-                        <div class="truncate">{{this.itemName}}</div>
+                    <td class="{{this.sizeByAgo}}">
+                        <div class="truncate">
+                            <a target="_blank" href="//classic.wowhead.com/item={{this.itemId}}" class="{{this.rarity}}" rel="ench={{this.enchantId}}">
+                                {{this.itemName}}
+                            </a>
+                        </div>
                     </td>
                     <td style="width:60px; color:green; font-size:0.7em;">{{this.enchant}}</td>
                     <td style="font-size:0.7em; width:30px; text-align: center;">{{this.lastSeenAgo}}d</td>
