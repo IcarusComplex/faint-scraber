@@ -28,7 +28,7 @@
         }
 
         .truncate {
-            width: 250px;
+            width: 190px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -36,13 +36,24 @@
     </style>
 
     <script>
+
+        let timeout = 1;
+        function inputChanged() {
+            const val = $('#input').val();
+            localStorage.setItem("inputValue", val);
+            clearTimeout(timeout);
+            timeout = setTimeout(() => renderTables(), 750);
+        }
+
         function daysAgo(firstDate) {
             const oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
             const secondDate = new Date();
             return Math.round(Math.abs((firstDate - secondDate) / oneDay)) + "d";
         }
 
-        $( document ).ready(function() {
+        function renderTables() {
+            const searchArguments = $('#input').val().split(",").map((e) => e.trim());
+
             var files = [
                 "2019-09-25T173000000Z.jsonl",
                 "2019-09-30T173000000Z.jsonl",
@@ -101,11 +112,29 @@
                 const list = Array.from(map.values());
 
                 const uniqueNames = list.map((e) => e.charName).filter(function (value, index, self) {
-                     return self.indexOf(value) === index;
-                 });
-                //const uniqueNames = ["Pjuske", "Knup", "Effia", "HQ", "Thriving", "Numx"];
+                    return self.indexOf(value) === index;
+                });
+
+                let foundInSearch = [];
+
+                if (searchArguments.length === 1 && searchArguments[0] === "") {
+                    foundInSearch = uniqueNames;
+                } else {
+                    uniqueNames.forEach((name) => {
+                        let found = false;
+                        searchArguments.forEach((d) => {
+                            if (d !== "" && name.toLowerCase().indexOf(d.toLowerCase()) > -1) {
+                                found = true;
+                            }
+                        });
+                        if (found) {
+                            foundInSearch.push(name);
+                        }
+                    });
+                }
+
                 const chars = [];
-                uniqueNames.forEach((name) => {
+                foundInSearch.forEach((name) => {
                     const char = {
                         name: name,
                         raidItems: list.filter((f) => f.charName === name && ["MC", "ONY"].includes(f.location)).sort((a, b) => b.lastSeen - a.lastSeen),
@@ -118,15 +147,21 @@
                 const template = $('#datatable-template').html();
                 const templateScript = Handlebars.compile(template);
                 const html = templateScript({chars: chars});
+                $('#content').empty();
                 $('#content').append(html);
             });
+        }
+
+        $( document ).ready(function() {
+            $('#input').val(localStorage.getItem("inputValue"));
+            renderTables();
         });
 
     </script>
 
     <script id="datatable-template" type="text/x-handlebars-template">
         {{#each chars}}
-        <div class="ui compact">
+        <div class="ui compact" style="margin-bottom: 1em;">
             <table class="ui table small compact">
                 <tbody>
 
@@ -135,8 +170,8 @@
                 </tr>
                 {{#each this.raidItems}}
                 <tr>
-                    <td class="{{this.rarity}}">{{this.itemName}}</td>
-                    <td style="font-size:0.7em;">{{this.lastSeenAgo}}</td>
+                    <td class="{{this.rarity}}"><div class="truncate">{{this.itemName}}</div></td>
+                    <td style="font-size:0.7em;"><div style="width:20px; text-align: center;">{{this.lastSeenAgo}}</div></td>
                 </tr>
                 {{/each}}
 
@@ -155,7 +190,7 @@
 <body>
 
 <div class="ui fluid input mini">
-    <input type="text" placeholder="Search...">
+    <input id="input" onkeyup="inputChanged()" onchange="inputChanged()" type="text" placeholder="Search...">
 </div>
 <div class="ui hidden divider"></div>
 <div id="content" class="ui grid">
