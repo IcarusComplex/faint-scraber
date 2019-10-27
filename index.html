@@ -75,17 +75,12 @@
                 "2019-10-16T173000000Z.jsonl",
                 "2019-10-23T173000000Z.jsonl",
             ];
-            $.when(
-                $.get("2019-09-25T173000000Z.jsonl"),
-                $.get("2019-09-30T173000000Z.jsonl"),
-                $.get("2019-10-02T173000000Z.jsonl"),
-                $.get("2019-10-09T173000000Z.jsonl"),
-                $.get("2019-10-16T173000000Z.jsonl"),
-                $.get("2019-10-23T173000000Z.jsonl"),
-
-                $.get("enchant_id_to_name.csv"),
-                $.get("all_items.csv"),
-            ).done(function() {
+            const promises = [];
+            files.forEach((f) => promises.push($.get(f)) );
+            promises.push($.get("enchant_id_to_name.csv"));
+            promises.push($.get("all_items.csv"));
+            $.when.apply($, promises).done(function() {
+                console.log(arguments);
                 let raidItems = Papa.parse(arguments[arguments.length - 1][0], {header: true}).data;
                 let enchantMap = Papa.parse(arguments[arguments.length - 2][0], {header: true}).data;
 
