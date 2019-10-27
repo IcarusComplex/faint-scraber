@@ -45,6 +45,12 @@
         function inputChanged() {
             const val = $('#input').val();
             localStorage.setItem("inputValue", val);
+            renderTables();
+        }
+
+        function inputKeyupChanged() {
+            const val = $('#input').val();
+            localStorage.setItem("inputValue", val);
             clearTimeout(timeout);
             timeout = setTimeout(() => renderTables(), 500);
         }
@@ -189,7 +195,7 @@
 <body>
 
 <div class="ui fluid input mini">
-    <input id="input" onkeyup="inputChanged()" onchange="inputChanged()" type="text" placeholder="Search...">
+    <input id="input" onkeyup="inputKeyupChanged()" onchange="inputChanged()" type="text" placeholder="Search...">
 </div>
 
 <div class="ui hidden divider"></div>
