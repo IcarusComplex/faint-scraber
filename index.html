@@ -8,8 +8,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.4.2/handlebars.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.1.0/papaparse.min.js"></script>
-    <script>var whTooltips = {colorLinks: true, iconizeLinks: true, renameLinks: true};</script>
-    <script src="https://wow.zamimg.com/widgets/power.js"></script>
 
     <style>
         .uncommon {
@@ -76,6 +74,7 @@
                 "2019-10-09T173000000Z.jsonl",
                 "2019-10-16T173000000Z.jsonl",
                 "2019-10-23T173000000Z.jsonl",
+                "2019-10-30T173000000Z.jsonl",
             ];
             const promises = [];
             files.forEach((f) => promises.push($.get(f)) );
@@ -150,24 +149,51 @@
                     });
                 }
 
+                const sortBy = ["Head", "Neck", "Shoulder", "Back", "Chest", "Wrist", "Hands", "Waist", "Legs", "Feet", "Finger", "Trinket", "Main Hand", "One-hand", "Off Hand", "Two-hand", "Ranged"];
+
                 const chars = [];
                 foundInSearch.forEach((name) => {
-                    const charItems = list.sort((a, b) => b.lastSeen - a.lastSeen).filter((f) => f.charName === name);
+                    const charItems = list
+                        .filter((f) => f.charName === name)
+                        .sort((a, b) => b.lastSeen - a.lastSeen);
                     const lastRaidAttend = charItems[0].lastSeenAgo;
-
-                    charItems.forEach((i) => {
-                        const daysSince = i.lastSeenAgo - lastRaidAttend;
-                        i.sizeByAgo = daysSince >= 7 ? "agoSmall" : "";
+                    charItems.forEach(f => {
+                        const daysSince = f.lastSeenAgo - lastRaidAttend;
+                        f.sizeByAgo = daysSince >= 7 ? "agoSmall" : "";
                     });
 
+                    const raidItems = charItems
+                        .filter((f) => ["MC", "ONY"].includes(f.location))
+                        .map(f => {
+                            const daysSince = f.lastSeenAgo - lastRaidAttend;
+                            f.sizeByAgo = daysSince >= 7 ? "agoSmall" : "";
+                            return f;
+                        })
+                        .map(f => { f.isRaid = true; return f;})
+                        .sort((a, b) => sortBy.indexOf(a.slot) - sortBy.indexOf(b.slot));
+
+                    const nonRaidItems = charItems
+                        .filter(f => !["MC", "ONY"].includes(f.location))
+                        .filter(f => (f.lastSeenAgo - lastRaidAttend) < 7)
+                        .filter(f => !["Shirt", "Tabard"].includes(f.slot))
+                        .map(f => { f.isRaid = false; return f;})
+                        .sort((a, b) => sortBy.indexOf(a.slot) - sortBy.indexOf(b.slot));
+
+                    const items = raidItems.concat(nonRaidItems)
+                        .sort((a, b) => sortBy.indexOf(a.slot) - sortBy.indexOf(b.slot))
+                        .sort((a, b) => b.lastSeen - a.lastSeen);
                     const char = {
                         name: name,
-                        raidItems: charItems.filter((f) => ["MC", "ONY"].includes(f.location)),
+                        raidItems: raidItems,
+                        nonRaidItems: nonRaidItems,
+                        items: items,
                     };
                     if (char.raidItems.length > 0) {
                         chars.push(char);
                     }
                 });
+
+                console.log(chars);
 
                 const template = $('#datatable-template').html();
                 const templateScript = Handlebars.compile(template);
@@ -193,10 +219,15 @@
                 <tr>
                     <td style="text-align: center; font-weight: bold;" colspan="3">{{this.name}}</td>
                 </tr>
-                {{#each this.raidItems}}
+                {{#each this.items}}
+                {{#if this.isRaid}}
+                <tr style="background-color: rgba(255, 165, 0, 0.3)">
+                {{else}}
                 <tr>
+                {{/if}}
                     <td class="{{this.sizeByAgo}}">
-                        <div class="truncate">
+                        <img class="ui avatar image" style="width: 1.4em; height: 1.4em; border-radius: 20%;" src="https://wow.zamimg.com/images/wow/icons/medium/{{this.icon}}.jpg">
+                        <div class="truncate" style="display: inline-block;vertical-align: middle">
                             <a target="_blank" href="//classic.wowhead.com/item={{this.itemId}}" class="{{this.rarity}}" rel="ench={{this.enchantId}}">
                                 {{this.itemName}}
                             </a>
@@ -224,5 +255,9 @@
 <div id="content" class="ui grid">
 
 </div>
+
+<script>var whTooltips = {colorLinks: false, iconizeLinks: false, renameLinks: false};</script>
+<script src="https://wow.zamimg.com/widgets/power.js"></script>
+
 </body>
 </html>
