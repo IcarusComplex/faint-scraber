@@ -50,6 +50,9 @@
         function inputKeyupChanged(e) {
             const val = $('#input').val();
             localStorage.setItem("inputValue", val);
+
+            window.history.replaceState({}, "", "?search=" + val.replace(/ /g, ""));
+
             clearTimeout(timeout);
             if (e.keyCode === 13) {
                 renderTables();
@@ -204,7 +207,13 @@
         }
 
         $( document ).ready(function() {
-            $('#input').val(localStorage.getItem("inputValue"));
+            let searchParams = new URLSearchParams(window.location.search);
+            if (searchParams.has("search")) {
+                $('#input').val(searchParams.get("search"));
+            } else {
+                $('#input').val(localStorage.getItem("inputValue"));
+            }
+
             renderTables();
         });
 
