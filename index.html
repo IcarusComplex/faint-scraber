@@ -10,6 +10,38 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.1.0/papaparse.min.js"></script>
 
     <style>
+        .Priest {
+            color: #FFFFFF;
+        }
+
+        .Warrior {
+            color: #C79C6E;
+        }
+
+        .Hunter {
+            color: #ABD473;
+        }
+
+        .Shaman {
+            color: #0070DE	;
+        }
+
+        .Druid {
+            color: #FF7D0A;
+        }
+
+        .Mage {
+            color: #69CCF0;
+        }
+
+        .Warlock {
+            color: #9482C9;
+        }
+
+        .Rogue {
+            color: #FFF569;
+        }
+
         .uncommon {
             color: #26c426;
             font-weight: bold;
@@ -46,6 +78,9 @@
 
     <script>
 
+        const charMap = new Map();
+        const enchantMap = {};
+        const itemInfoMap = {};
         let timeout = 1;
         function inputKeyupChanged(e) {
             const val = $('#input').val();
@@ -67,10 +102,8 @@
             return Math.round(Math.abs((firstDate - secondDate) / oneDay));
         }
 
-        function renderTables() {
-            const searchArguments = $('#input').val().split(",").map((e) => e.trim());
-
-            var files = [
+        function fetchData(callback) {
+            const files = [
                 "2019-09-25T173000000Z.jsonl",
                 "2019-09-30T173000000Z.jsonl",
                 "2019-10-02T173000000Z.jsonl",
@@ -84,10 +117,16 @@
             promises.push($.get("enchant_id_to_name.csv"));
             promises.push($.get("all_items.csv"));
             $.when.apply($, promises).done(function() {
-                let raidItems = Papa.parse(arguments[arguments.length - 1][0], {header: true}).data;
-                let enchantMap = Papa.parse(arguments[arguments.length - 2][0], {header: true}).data;
+                const itemInfoList = Papa.parse(arguments[arguments.length - 1][0], {header: true}).data;
+                itemInfoList.forEach((v) => {
+                    itemInfoMap[v.itemId] = v;
+                });
 
-                const map = new Map();
+                const enchantList =  Papa.parse(arguments[arguments.length - 2][0], {header: true}).data;
+                enchantList.forEach((v) => {
+                    enchantMap[v.id] = v.name;
+                });
+
                 for (let fileIndex = 0; fileIndex < files.length; fileIndex++) {
                     const filePath = files[fileIndex];
                     const data = arguments[fileIndex];
@@ -99,109 +138,120 @@
                             for (const item of items) {
                                 const id = parsed.charName + '_' + item.name;
                                 const enchantId = item.enchant;
-                                let enchant = enchantMap.find((e) => e.id === enchantId);
-                                enchant = enchant ? enchant.name : enchantId;
+                                let enchant = enchantMap[enchantId] ? enchantMap[enchantId] : enchantId;
 
-                                if (!map.has(id)) {
-                                    const found = raidItems.find((ri) => ri.itemId === item.itemId);
+                                if (!charMap.has(id)) {
+                                    const found = itemInfoMap[item.itemId];
                                     const init = {
                                         firstSeen: new Date(dateStr).getTime(),
                                         firstSeenAgo: daysAgo(new Date(dateStr)),
                                         itemName: item.name,
                                         itemId: item.itemId,
                                         charName: parsed.charName,
+                                        clazz: parsed.clazz,
                                         location: found ? found.location : null,
                                         icon: found ? found.icon : null,
                                         rarity: found ? found.rarity : null,
                                         slot: found ? found.slot : null,
                                         type: found ? found.type : null,
                                     };
-                                    map.set(id, init)
+                                    charMap.set(id, init)
                                 }
 
-                                map.get(id).enchantId = enchantId;
-                                map.get(id).enchant = enchant;
-                                map.get(id).lastSeen = new Date(dateStr).getTime();
-                                map.get(id).lastSeenAgo = daysAgo(new Date(dateStr));
+                                charMap.get(id).clazz = parsed.clazz;
+                                charMap.get(id).enchantId = enchantId;
+                                charMap.get(id).enchant = enchant;
+                                charMap.get(id).lastSeen = new Date(dateStr).getTime();
+                                charMap.get(id).lastSeenAgo = daysAgo(new Date(dateStr));
                             }
                         }
                     }
                 }
 
-                const list = Array.from(map.values());
+                callback();
+            });
+        }
 
-                const uniqueNames = list.map((e) => e.charName).filter(function (value, index, self) {
-                    return self.indexOf(value) === index;
-                });
+        function renderTables() {
+            const searchArguments = $('#input').val().split(",").map((e) => e.trim());
+            const list = Array.from(charMap.values());
 
-                let foundInSearch = [];
+            const uniqueNames = list.map((e) => e.charName).filter(function (value, index, self) {
+                return self.indexOf(value) === index;
+            });
 
-                if (searchArguments.length === 1 && searchArguments[0] === "") {
-                    foundInSearch = uniqueNames;
-                } else {
-                    uniqueNames.forEach((name) => {
-                        let found = false;
-                        searchArguments.forEach((d) => {
-                            if (d !== "" && name.toLowerCase().indexOf(d.toLowerCase()) > -1) {
-                                found = true;
-                            }
-                        });
-                        if (found) {
-                            foundInSearch.push(name);
+            let foundInSearch = [];
+
+            if (searchArguments.length === 1 && searchArguments[0] === "") {
+                foundInSearch = uniqueNames;
+            } else {
+                uniqueNames.forEach((name) => {
+                    let found = false;
+                    searchArguments.forEach((d) => {
+                        if (d !== "" && name.toLowerCase().indexOf(d.toLowerCase()) > -1) {
+                            found = true;
                         }
                     });
-                }
+                    if (found) {
+                        foundInSearch.push(name);
+                    }
+                });
+            }
 
-                const sortBy = ["Head", "Neck", "Shoulder", "Back", "Chest", "Wrist", "Hands", "Waist", "Legs", "Feet", "Finger", "Trinket", "Main Hand", "One-hand", "Off Hand", "Two-hand", "Ranged"];
+            const sortBy = ["Head", "Neck", "Shoulder", "Back", "Chest", "Wrist", "Hands", "Waist", "Legs", "Feet", "Finger", "Trinket", "Main Hand", "One-hand", "Off Hand", "Two-hand", "Ranged"];
 
-                const chars = [];
-                foundInSearch.forEach((name) => {
-                    const charItems = list
-                        .filter((f) => f.charName === name)
-                        .sort((a, b) => b.lastSeen - a.lastSeen);
-                    const lastRaidAttend = charItems[0].lastSeenAgo;
-                    charItems.forEach(f => {
+            const chars = [];
+            foundInSearch.forEach((name) => {
+                let clazz;
+                const charItems = list
+                    .filter((f) => f.charName === name)
+                    .sort((a, b) => b.lastSeen - a.lastSeen);
+                const lastRaidAttend = charItems[0].lastSeenAgo;
+                charItems.forEach(f => {
+                    const daysSince = f.lastSeenAgo - lastRaidAttend;
+                    f.sizeByAgo = daysSince >= 7 ? "agoSmall" : "";
+
+                    clazz = f.clazz ? f.clazz : clazz;
+                });
+
+                const raidItems = charItems
+                    .filter((f) => ["MC", "ONY"].includes(f.location))
+                    .map(f => {
                         const daysSince = f.lastSeenAgo - lastRaidAttend;
                         f.sizeByAgo = daysSince >= 7 ? "agoSmall" : "";
-                    });
+                        return f;
+                    })
+                    .map(f => { f.isRaid = true; return f;})
+                    .sort((a, b) => sortBy.indexOf(a.slot) - sortBy.indexOf(b.slot));
 
-                    const raidItems = charItems
-                        .filter((f) => ["MC", "ONY"].includes(f.location))
-                        .map(f => {
-                            const daysSince = f.lastSeenAgo - lastRaidAttend;
-                            f.sizeByAgo = daysSince >= 7 ? "agoSmall" : "";
-                            return f;
-                        })
-                        .map(f => { f.isRaid = true; return f;})
-                        .sort((a, b) => sortBy.indexOf(a.slot) - sortBy.indexOf(b.slot));
+                const nonRaidItems = charItems
+                    .filter(f => !["MC", "ONY"].includes(f.location))
+                    .filter(f => (f.lastSeenAgo - lastRaidAttend) < 7)
+                    .filter(f => !["Shirt", "Tabard"].includes(f.slot))
+                    .map(f => { f.isRaid = false; return f;})
+                    .sort((a, b) => sortBy.indexOf(a.slot) - sortBy.indexOf(b.slot));
 
-                    const nonRaidItems = charItems
-                        .filter(f => !["MC", "ONY"].includes(f.location))
-                        .filter(f => (f.lastSeenAgo - lastRaidAttend) < 7)
-                        .filter(f => !["Shirt", "Tabard"].includes(f.slot))
-                        .map(f => { f.isRaid = false; return f;})
-                        .sort((a, b) => sortBy.indexOf(a.slot) - sortBy.indexOf(b.slot));
+                const items = raidItems.concat(nonRaidItems)
+                    .sort((a, b) => sortBy.indexOf(a.slot) - sortBy.indexOf(b.slot))
+                    .sort((a, b) => b.lastSeen - a.lastSeen);
 
-                    const items = raidItems.concat(nonRaidItems)
-                        .sort((a, b) => sortBy.indexOf(a.slot) - sortBy.indexOf(b.slot))
-                        .sort((a, b) => b.lastSeen - a.lastSeen);
-                    const char = {
-                        name: name,
-                        raidItems: raidItems,
-                        nonRaidItems: nonRaidItems,
-                        items: items,
-                    };
-                    if (char.raidItems.length > 0) {
-                        chars.push(char);
-                    }
-                });
-
-                const template = $('#datatable-template').html();
-                const templateScript = Handlebars.compile(template);
-                const html = templateScript({chars: chars});
-                $('#content').empty();
-                $('#content').append(html);
+                const char = {
+                    name: name,
+                    raidItems: raidItems,
+                    nonRaidItems: nonRaidItems,
+                    items: items,
+                    clazz: clazz
+                };
+                if (char.raidItems.length > 0) {
+                    chars.push(char);
+                }
             });
+
+            const template = $('#datatable-template').html();
+            const templateScript = Handlebars.compile(template);
+            const html = templateScript({chars: chars});
+            $('#content').empty();
+            $('#content').append(html);
         }
 
         $( document ).ready(function() {
@@ -212,7 +262,7 @@
                 $('#input').val(localStorage.getItem("inputValue"));
             }
 
-            renderTables();
+            fetchData(renderTables);
         });
 
     </script>
@@ -220,15 +270,15 @@
     <script id="datatable-template" type="text/x-handlebars-template">
         {{#each chars}}
         <div class="ui compact" style="margin-bottom: 1em;">
-            <table class="ui table small compact">
+            <table class="ui table small compact" style="border:#000000">
                 <tbody>
 
                 <tr>
-                    <td style="text-align: center; font-weight: bold;" colspan="3">{{this.name}}</td>
+                    <td class="{{this.clazz}}" style="background-color:#323232;text-align: center; font-weight: bold;" colspan="3">{{this.name}}</td>
                 </tr>
                 {{#each this.items}}
                 {{#if this.isRaid}}
-                <tr style="background-color: rgba(255, 165, 0, 0.3)">
+                <tr style="background-color: rgba(0,0,0,0.08)">
                 {{else}}
                 <tr>
                 {{/if}}
