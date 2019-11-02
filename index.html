@@ -140,6 +140,10 @@
                                 const enchantId = item.enchant;
                                 let enchant = enchantMap[enchantId] ? enchantMap[enchantId] : enchantId;
 
+                                if (item.itemId === "13289") {
+                                    continue;
+                                }
+
                                 if (!charMap.has(id)) {
                                     const found = itemInfoMap[item.itemId];
                                     const init = {
