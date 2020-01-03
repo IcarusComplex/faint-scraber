@@ -2,8 +2,8 @@ const puppeteer = require('puppeteer');
 const sleep = require('await-sleep');
 const fs = require('fs-extra');
 
-const reportId = "FtXbghmA7L2NqR4V";
-const date = new Date("Wed Dec 18 2019 19:30 GMT+1");
+const reportId = "mhBzXNaPwJqnMjTr";
+const date = new Date("Wed Dec 30 2019 19:30 GMT+1");
 const fileName = date.toISOString().replace(/:/g, "").replace(/\./g, "");
 
 console.log(fileName);
