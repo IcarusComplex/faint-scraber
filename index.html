@@ -138,7 +138,8 @@
                 "2019-12-18T183000000Z.jsonl",
                 "2019-12-18T183000000Z_1.jsonl",
                 "2019-12-30T183000000Z.jsonl",
-                "2020-01-06T183000000Z.jsonl"
+                "2020-01-06T183000000Z.jsonl",
+                "2020-01-15T183000000Z.jsonl"
             ];
             const promises = [];
             files.forEach((f) => promises.push($.get(f)) );
@@ -249,10 +250,10 @@
             const excludedMembers = [
                 "Torhold", "Dodos", "Mynx", "Ker", "Hq", "Nextplease", "Montbanck", "Wilddot", "Mooplol", "Skabben", "Jynxmaze", "Stormrise",
                 "Goatiie", "Thriving", "Cowbo", "Atheos", "Vildhesten", "Pikokurva", "Sylfrekk",
-                "Xnd", "Goatmaster", "Starforge", "Crankenstein",
+                "Xnd", "Goatmaster", "Starforge", "Crankenstein", "Sukubos", "Crysanthos", "Rimmer",
 
                 "Angryman", "Hunterduen", "Kracko", "Lyandrie", "Seres", "Bayne", "Goznam", "Montbanc",
-                "Killerbeebop", "Decanta", "Numx"
+                "Killerbeebop", "Decanta", "Boomslot", "Expung", "Ambrosine", "Flowermoose"
             ];
 
             foundInSearch = foundInSearch.filter((name) => !excludedMembers.includes(name));
