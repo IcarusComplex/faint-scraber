@@ -2,8 +2,8 @@ const puppeteer = require('puppeteer');
 const sleep = require('await-sleep');
 const fs = require('fs-extra');
 
-const reportId = "1q6YfjJ3zTAVaQxb";
-const date = new Date("Wed Jan 29 2020 19:30 GMT+1");
+const reportId = "GwJzQpTtPCXYyfHb";
+const date = new Date("Mon Feb 13 2020 19:30 GMT+1");
 const fileName = date.toISOString().replace(/:/g, "").replace(/\./g, "");
 
 console.log(fileName);
@@ -71,7 +71,7 @@ console.log(fileName);
                 items: items
             };
             if (items.length > 0) {
-                fs.appendFileSync(`${fileName}.jsonl`, JSON.stringify(char) + "\n");
+                fs.appendFileSync(`logs/${fileName}.jsonl`, JSON.stringify(char) + "\n");
                 console.log(`Wrote ${charName} ${sourceId}`);
             } else {
                 console.log(`Dismissed ${sourceId}`);
