@@ -1,21 +1,15 @@
 const puppeteer = require('puppeteer');
-const sleep = require('await-sleep');
 const fs = require('fs-extra');
 
-const reportId = "GwJzQpTtPCXYyfHb";
-const date = new Date("Mon Feb 13 2020 19:30 GMT+1");
-const fileName = date.toISOString().replace(/:/g, "").replace(/\./g, "");
-
-console.log(fileName);
-
-(async () => {
+const scrabe = async (reportId) => {
     const browser = await puppeteer.launch();
 
     const page = await browser.newPage();
     const url = `https://classic.warcraftlogs.com/reports/${reportId}#boss=-2&difficulty=0&type=summary`;
     await page.goto(url, {waitUntil: 'networkidle2', timeout: 0});
 
-    const sources = await page.evaluate(() => {
+
+    const result = await page.evaluate(() => {
         const sources = new Map();
         const entries = document.getElementsByClassName("composition-entry");
         for (let i = 0, entry; entry = entries[i]; i++) {
@@ -30,12 +24,19 @@ console.log(fileName);
                 clazz: clazz
             });
         }
-        return Array.from(sources.values());
+
+        return {
+            sources: Array.from(sources.values()),
+            dateStr: document.getElementById("reportdate").innerText
+        };
     });
+
+    const date = new Date(`${result.dateStr} 19:30 GMT+1`);
+    const fileName = date.toISOString().replace(/:/g, "").replace(/\./g, "");
 
     await page.close();
 
-    for (const source of sources) {
+    for (const source of result.sources) {
         const sourceId = source.sourceId;
         const clazz = source.clazz;
         const charName = source.charName;
@@ -86,4 +87,7 @@ console.log(fileName);
     }
 
     await browser.close();
-})();
+};
+
+const reportId = "GwJzQpTtPCXYyfHb";
+scrabe(reportId).then().catch((e) => console.error(e));
