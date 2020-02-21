@@ -89,5 +89,5 @@ const scrabe = async (reportId) => {
     await browser.close();
 };
 
-const reportId = "DxZVAmJaqgnwcNWf";
+const reportId = "j7mXqCwL4vDrZH1J";
 scrabe(reportId).then().catch((e) => console.error(e));
