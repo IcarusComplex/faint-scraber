@@ -14,7 +14,11 @@ const scrabe = async (reportId) => {
         const entries = document.getElementsByClassName("composition-entry");
         for (let i = 0, entry; entry = entries[i]; i++) {
             const reportLink = entry.childNodes[1].outerHTML;
-            const { groups: { sourceId } } =/onclick.*?1,(?<sourceId>.*?),0,0/.exec(reportLink);
+            const exec = /onclick.*?1,(?<sourceId>.*?),0,0/.exec(reportLink);
+            if (exec == null) {
+                continue;
+            }
+            const { groups: { sourceId } } = exec;
             const clazz = entry.childNodes[1].classList[0];
             const charName = entry.childNodes[1].innerText;
 
@@ -26,11 +30,14 @@ const scrabe = async (reportId) => {
         }
 
         return {
+            guildName: document.getElementById("guild-reports-text").childNodes[1].innerText,
             sources: Array.from(sources.values()),
             dateStr: document.getElementById("reportdate").innerText
         };
     });
 
+    const guildName = result.guildName.toLowerCase();
+    fs.ensureDirSync(`logs_${guildName}`);
     const date = new Date(`${result.dateStr} 19:30 GMT+1`);
     const fileName = date.toISOString().replace(/:/g, "").replace(/\./g, "");
 
@@ -89,5 +96,9 @@ const scrabe = async (reportId) => {
     await browser.close();
 };
 
-const reportId = "j7mXqCwL4vDrZH1J";
-scrabe(reportId).then().catch((e) => console.error(e));
+const reportIds = JSON.parse(fs.readFileSync("report_ids.json", "utf8"));
+(async function() {
+    for (const id of reportIds) {
+        await scrabe(id);
+    }
+})();
