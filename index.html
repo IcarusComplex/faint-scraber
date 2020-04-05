@@ -23,8 +23,12 @@
             color: #ABD473;
         }
 
+        .Paladin {
+            color: #F58CBA;
+        }
+
         .Shaman {
-            color: #0070DE	;
+            color: #0070DE;
         }
 
         .Druid {
@@ -75,21 +79,21 @@
             padding: 1em;
             background-color: #1e1e1e;
         }
-		
-		.search {
-			position: fixed !important;
-			top: 0;
-			width: 100%;
-			padding: 10px;
-			padding-left: 5px;
-			padding-right: 30px;
-			z-index: 100;
-			background-color: #1e1e1e;
-		}
-		
-		.divider {
-			height: 2.5% !important;
-		}
+
+        .search {
+            position: fixed !important;
+            top: 0;
+            width: 100%;
+            padding: 10px;
+            padding-left: 5px;
+            padding-right: 30px;
+            z-index: 100;
+            background-color: #1e1e1e;
+        }
+
+        .divider {
+            height: 2.5% !important;
+        }
     </style>
 
     <script>
@@ -173,7 +177,7 @@
                     const filePath = files[fileIndex];
                     const data = arguments[fileIndex];
 
-                    const found = filePath.match(/(.*?)T/);
+                    const found = filePath.match(/logs\/(.*?)T/);
                     const dateStr = found[1];
                     for (const line of data[0].split("\n")) {
                         if (line !== "") {
@@ -247,7 +251,7 @@
             }
 
             const classSearch = searchArguments.filter((a) => {
-                return ["mage", "warrior", "hunter", "shaman", "warlock", "priest", "druid", "rogue"].includes(a.toLowerCase());
+                return ["mage", "warrior", "hunter", "shaman", "paladin", "warlock", "priest", "druid", "rogue"].includes(a.toLowerCase());
             });
             classSearch.forEach((searchClazz) => {
                 list.forEach((char) => {
@@ -287,7 +291,7 @@
                 });
 
                 const raidItems = charItems
-                    .filter((f) => ["MC", "ONY"].includes(f.location))
+                    .filter((f) => ["MC", "ONY", "BWL", "ZG", "AQ20", "AQ40", "NAX", "Azuregos", "Kazzak"].includes(f.location))
                     .map(f => {
                         const daysSince = f.lastSeenAgo - lastRaidAttend;
                         f.sizeByAgo = daysSince >= 7 ? "agoSmall" : "";
@@ -341,35 +345,35 @@
 
     <script id="datatable-template" type="text/x-handlebars-template">
         {{#each chars}}
-        <div class="ui compact" style="margin-bottom: 1em;">
-            <table class="ui unstackable table small compact" style="border:#000000">
-                <tbody>
+            <div class="ui compact" style="margin-bottom: 1em;">
+                <table class="ui unstackable table small compact" style="border:#000000">
+                    <tbody>
 
-                <tr>
-                    <td class="{{this.clazz}}" style="background-color:#323232;text-align: center; font-weight: bold;" colspan="3">{{this.name}}</td>
-                </tr>
-                {{#each this.items}}
-                {{#if this.isRaid}}
-                <tr style="background-color: rgba(0,0,0,0.08)">
-                {{else}}
-                <tr>
-                {{/if}}
-                    <td class="{{this.sizeByAgo}}">
-                        <img class="ui avatar image" style="width: 1.4em; height: 1.4em; border-radius: 20%;" src="https://wow.zamimg.com/images/wow/icons/medium/{{this.icon}}.jpg">
-                        <div class="truncate" style="display: inline-block;vertical-align: middle">
-                            <a target="_blank" href="//classic.wowhead.com/item={{this.itemId}}" class="{{this.rarity}}" rel="ench={{this.enchantId}}">
-                                {{this.itemName}}
-                            </a>
-                        </div>
-                    </td>
-                    <td style="width:60px; color:green; font-size:0.7em;">{{this.enchant}}</td>
-                    <td style="font-size:0.7em; width:30px; text-align: center;">{{this.lastSeenAgo}}d</td>
-                </tr>
-                {{/each}}
+                    <tr>
+                        <td class="{{this.clazz}}" style="background-color:#323232;text-align: center; font-weight: bold;" colspan="3">{{this.name}}</td>
+                    </tr>
+                    {{#each this.items}}
+                        {{#if this.isRaid}}
+                            <tr style="background-color: rgba(0,0,0,0.08)">
+                        {{else}}
+                            <tr>
+                        {{/if}}
+                            <td class="{{this.sizeByAgo}}">
+                                <img class="ui avatar image" style="width: 1.4em; height: 1.4em; border-radius: 20%;" src="https://wow.zamimg.com/images/wow/icons/medium/{{this.icon}}.jpg">
+                                <div class="truncate" style="display: inline-block;vertical-align: middle">
+                                    <a target="_blank" href="//classic.wowhead.com/item={{this.itemId}}" class="{{this.rarity}}" rel="ench={{this.enchantId}}">
+                                    {{this.itemName}}
+                                    </a>
+                                </div>
+                            </td>
+                            <td style="width:60px; color:green; font-size:0.7em;">{{this.enchant}}</td>
+                            <td style="font-size:0.7em; width:30px; text-align: center;">{{this.lastSeenAgo}}d</td>
+                        </tr>
+                    {{/each}}
 
-                </tbody>
-            </table>
-        </div>
+                    </tbody>
+                </table>
+            </div>
         {{/each}}
     </script>
 
