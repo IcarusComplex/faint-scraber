@@ -302,7 +302,7 @@
                     .sort((a, b) => sortBy.indexOf(a.slot) - sortBy.indexOf(b.slot));
 
                 const nonRaidItems = charItems
-                    .filter(f => !["MC", "ONY"].includes(f.location))
+                    .filter(f => !["MC", "ONY", "BWL", "ZG", "AQ20", "AQ40", "NAX", "Azuregos", "Kazzak"].includes(f.location))
                     .filter(f => (f.lastSeenAgo - lastRaidAttend) < 7)
                     .filter(f => !["Shirt", "Tabard"].includes(f.slot))
                     .map(f => { f.isRaid = false; return f;})
