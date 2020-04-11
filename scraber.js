@@ -1,26 +1,24 @@
 const puppeteer = require('puppeteer');
-const sleep = require('await-sleep');
 const fs = require('fs-extra');
 
-const reportId = "FtXbghmA7L2NqR4V";
-const date = new Date("Wed Dec 18 2019 19:30 GMT+1");
-const fileName = date.toISOString().replace(/:/g, "").replace(/\./g, "");
-
-console.log(fileName);
-
-(async () => {
+const scrabe = async (reportId) => {
     const browser = await puppeteer.launch();
 
     const page = await browser.newPage();
     const url = `https://classic.warcraftlogs.com/reports/${reportId}#boss=-2&difficulty=0&type=summary`;
     await page.goto(url, {waitUntil: 'networkidle2', timeout: 0});
 
-    const sources = await page.evaluate(() => {
+
+    const result = await page.evaluate(() => {
         const sources = new Map();
         const entries = document.getElementsByClassName("composition-entry");
         for (let i = 0, entry; entry = entries[i]; i++) {
             const reportLink = entry.childNodes[1].outerHTML;
-            const { groups: { sourceId } } =/onclick.*?1,(?<sourceId>.*?),0,0/.exec(reportLink);
+            const exec = /onclick.*?1,(?<sourceId>.*?),0,0/.exec(reportLink);
+            if (exec == null) {
+                continue;
+            }
+            const { groups: { sourceId } } = exec;
             const clazz = entry.childNodes[1].classList[0];
             const charName = entry.childNodes[1].innerText;
 
@@ -30,12 +28,22 @@ console.log(fileName);
                 clazz: clazz
             });
         }
-        return Array.from(sources.values());
+
+        return {
+            guildName: document.getElementById("guild-reports-text").childNodes[1].innerText,
+            sources: Array.from(sources.values()),
+            dateStr: document.getElementById("reportdate").innerText
+        };
     });
+
+    const guildName = result.guildName.toLowerCase();
+    fs.ensureDirSync(`logs_${guildName}`);
+    const date = new Date(`${result.dateStr} 19:30 GMT+1`);
+    const fileName = date.toISOString().replace(/:/g, "").replace(/\./g, "");
 
     await page.close();
 
-    for (const source of sources) {
+    for (const source of result.sources) {
         const sourceId = source.sourceId;
         const clazz = source.clazz;
         const charName = source.charName;
@@ -71,7 +79,7 @@ console.log(fileName);
                 items: items
             };
             if (items.length > 0) {
-                fs.appendFileSync(`${fileName}.jsonl`, JSON.stringify(char) + "\n");
+                fs.appendFileSync(`logs/${fileName}.jsonl`, JSON.stringify(char) + "\n");
                 console.log(`Wrote ${charName} ${sourceId}`);
             } else {
                 console.log(`Dismissed ${sourceId}`);
@@ -86,4 +94,11 @@ console.log(fileName);
     }
 
     await browser.close();
+};
+
+const reportIds = JSON.parse(fs.readFileSync("report_ids.json", "utf8"));
+(async function() {
+    for (const id of reportIds) {
+        await scrabe(id);
+    }
 })();
