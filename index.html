@@ -76,17 +76,19 @@
         }
 
         body {
+            width: 100%;
             padding: 1em;
             background-color: #1e1e1e;
         }
-        
+
         .search {
             position: fixed !important;
             top: 0;
             width: 100%;
-            padding: 10px;
-            padding-left: 5px;
-            padding-right: 30px;
+            padding: 1em;
+            margin: 0;
+            padding-left: 8em;
+            padding-right: 10em;
             z-index: 100;
             background-color: #1e1e1e;
         }
@@ -239,22 +241,22 @@
             if (searchArguments.length === 1 && searchArguments[0] === "") {
                 foundInSearch = uniqueNames;
             } else {
-                uniqueNames.forEach((name) => {
-                    let found = false;
-                    searchArguments.forEach((d) => {
-                        if (d !== "" && name.toLowerCase().indexOf(d.toLowerCase()) > -1) {
-                            found = true;
+                foundInSearch = uniqueNames.filter((name) => {
+                    for (let arg of searchArguments) {
+                        if (arg.startsWith('#')) continue
+
+                        if (arg !== "" && name.toLowerCase().indexOf(arg.toLowerCase()) < 0) {
+                            return false
                         }
-                    });
-                    if (found) {
-                        foundInSearch.push(name);
                     }
-                });
+                    return true
+                })
             }
 
             const classSearch = searchArguments.filter((a) => {
                 return ["mage", "warrior", "hunter", "shaman", "paladin", "warlock", "priest", "druid", "rogue"].includes(a.toLowerCase());
             });
+
             classSearch.forEach((searchClazz) => {
                 list.forEach((char) => {
                     const clazz = char.clazz;
@@ -311,7 +313,23 @@
 
                 const items = raidItems.concat(nonRaidItems)
                     .sort((a, b) => sortBy.indexOf(a.slot) - sortBy.indexOf(b.slot))
-                    .sort((a, b) => b.lastSeen - a.lastSeen);
+                    .sort((a, b) => b.lastSeen - a.lastSeen)
+                    .filter((item) => {
+                        for (let arg of searchArguments) {
+                            if (arg.startsWith('#')) {
+                                let name = false
+                                let enchant = false
+                                if (item.itemName.toLowerCase().indexOf(arg.substring(1).trim().toLowerCase()) > -1) {
+                                    name = true
+                                }
+                                if (item.enchant && item.enchant.toLowerCase().indexOf(arg.substring(1).trim().toLowerCase()) > -1) {
+                                    enchant = true
+                                }
+                                return name || enchant
+                            }
+                        }
+                        return true
+                    });
 
                 const char = {
                     name: name,
