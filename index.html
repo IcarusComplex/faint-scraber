@@ -294,8 +294,10 @@
                     clazz = f.clazz ? f.clazz : clazz;
                 });
 
+                const raidLocations = ["MC", "ONY", "BWL", "ZG", "AQ20", "AQ40", "NAX", "Azuregos", "Kazzak"]
+
                 const raidItems = charItems
-                    .filter((f) => ["MC", "ONY", "BWL", "ZG", "AQ20", "AQ40", "NAX", "Azuregos", "Kazzak"].includes(f.location))
+                    .filter((f) => raidLocations.includes(f.location))
                     .map(f => {
                         const daysSince = f.lastSeenAgo - lastRaidAttend;
                         f.sizeByAgo = daysSince >= 7 ? "agoSmall" : "";
@@ -305,7 +307,7 @@
                     .sort((a, b) => sortBy.indexOf(a.slot) - sortBy.indexOf(b.slot));
 
                 const nonRaidItems = charItems
-                    .filter(f => !["MC", "ONY", "BWL", "ZG", "AQ20", "AQ40", "NAX", "Azuregos", "Kazzak"].includes(f.location))
+                    .filter(f => !raidLocations.includes(f.location))
                     .filter(f => (f.lastSeenAgo - lastRaidAttend) < 7)
                     .filter(f => !["Shirt", "Tabard"].includes(f.slot))
                     .map(f => { f.isRaid = false; return f;})
@@ -317,15 +319,15 @@
                     .filter((item) => {
                         for (let arg of searchArguments) {
                             if (arg.startsWith('#')) {
-                                let name = false
-                                let enchant = false
-                                if (item.itemName.toLowerCase().indexOf(arg.substring(1).trim().toLowerCase()) > -1) {
-                                    name = true
+                                console.log (`item: ${Object.keys(item)}`)
+                                for (let val of Object.values(item)) {
+                                    if (val && typeof val === 'string' || val instanceof String) {
+                                        if (val.toLowerCase().indexOf(arg.substring(1).trim().toLowerCase()) > -1) {
+                                            return true
+                                        }
+                                    }
                                 }
-                                if (item.enchant && item.enchant.toLowerCase().indexOf(arg.substring(1).trim().toLowerCase()) > -1) {
-                                    enchant = true
-                                }
-                                return name || enchant
+                                return false
                             }
                         }
                         return true
