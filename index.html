@@ -319,7 +319,6 @@
                     .filter((item) => {
                         for (let arg of searchArguments) {
                             if (arg.startsWith('#')) {
-                                console.log (`item: ${Object.keys(item)}`)
                                 for (let val of Object.values(item)) {
                                     if (val && (typeof val === 'string' || val instanceof String)) {
                                         if (val.toLowerCase().indexOf(arg.substring(1).trim().toLowerCase()) > -1) {
