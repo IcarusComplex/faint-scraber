@@ -242,14 +242,16 @@
                 foundInSearch = uniqueNames;
             } else {
                 foundInSearch = uniqueNames.filter((name) => {
+                    let valid = false
                     for (let arg of searchArguments) {
                         if (arg.startsWith('#')) continue
 
-                        if (arg !== "" && name.toLowerCase().indexOf(arg.toLowerCase()) < 0) {
-                            return false
+                        if (arg !== "" && name.toLowerCase().indexOf(arg.toLowerCase()) > -1) {
+                            valid = true
+                            break
                         }
                     }
-                    return true
+                    return valid
                 })
             }
 
